@@ -2,6 +2,8 @@
 
 这是一个用于北邮体育场馆预约流程的 OpenClaw Skill。
 
+**其中的环境变量参数需要通过抓包获得，常见抓包软件均可，这也是环境配置的一部分。为防止接口滥用并尽量维护绝大多数同学的正常使用权益，本 Skill 仅供学习交流使用。如需了解具体加密参数的处理方式，请联系 [zhubaoheng0728@gmail.com](mailto:zhubaoheng0728@gmail.com)。**
+
 ## 功能
 
 - 查询当前所有在线场馆的可预约时间
@@ -70,6 +72,14 @@ python3 ./scripts/gym_booking_tool.py qr --venue swim
 - 仓库中出现的环境变量名是混淆后的占位名
 - 真实环境变量仅保存在本地私有配置中
 - 真实值仅供作者本人使用，不包含在公开仓库中
+
+五个本地环境变量分别表示：
+
+- `SESSION_A`：`uid`
+- `SESSION_B`：某个人信息字段
+- `SESSION_C`：`token`
+- `SESSION_D`：`v3/api.php/*` 请求体所使用的 `AES-128-CBC` 加密 `key`
+- `SESSION_E`：`v3/api.php/*` 请求体所使用的 `AES-128-CBC` 加密 `iv`
 
 ## 说明
 
