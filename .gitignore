@@ -1,0 +1,6 @@
+.DS_Store
+.env.local
+README_KEY
+generated_orders/
+scripts/__pycache__/
+*.pyc
