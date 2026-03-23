@@ -1,0 +1,78 @@
+# 北邮体育预约 Skill
+
+这是一个用于北邮体育场馆预约流程的 OpenClaw Skill。
+
+## 功能
+
+- 查询当前所有在线场馆的可预约时间
+- 一次查询所有场馆的可预约时间和状态
+- 按日期 + 时段或具体时间自动发起预约
+- 为当前有效订单生成与原始页面完全相同的本地预约详情页和二维码页面
+
+## 支持的请求示例
+
+- `游泳馆什么时候能预约`
+- `健身房什么时候能预约`
+- `乒乓球场什么时候能预约`
+- `预约今天下午的游泳馆`
+- `预约明天上午10点的老健身房`
+- `给我游泳馆二维码`
+
+## 支持的场馆
+
+Skill 支持所有当前从实时场馆列表中返回的场馆，例如：
+
+- `健身房`
+- `鸿雁健身房`
+- `一层羽毛球`
+- `三层羽毛球馆`
+- `乒乓球场`
+- `台球室`
+- `网球场`
+- `游泳馆`
+- `沙河校区健身房`
+- `沙河校区乒乓球馆`
+- `沙河校区羽毛场地`
+- `游泳达标测试`
+
+## 主要命令
+
+```bash
+python3 ./scripts/gym_booking_tool.py list --venue swim
+python3 ./scripts/gym_booking_tool.py list --venue all-gyms
+python3 ./scripts/gym_booking_tool.py list --venue '乒乓球场'
+python3 ./scripts/gym_booking_tool.py book --venue swim --date YYYY-MM-DD --period afternoon
+python3 ./scripts/gym_booking_tool.py book --venue old-gym --date YYYY-MM-DD --time 10:00
+python3 ./scripts/gym_booking_tool.py qr --venue swim
+```
+
+## 场馆别名
+
+- `swim` -> `游泳馆`
+- `old-gym` -> `健身房`
+- `hongyan-gym` -> `鸿雁健身房`
+- `all-gyms` -> `健身房` + `鸿雁健身房`
+- `all-venues` -> 当前所有在线场馆
+
+## 输出说明
+
+工具输出为 JSON：
+
+- 查询可预约时间时，返回 `bookable_slots` 和 `all_slots`
+- 发起预约时，返回 `order_result`
+- 预约成功或查询二维码时，可能返回 `order_page_path`
+- 生成的本地 HTML 页面默认写入 `./generated_orders/`
+
+## 私有配置说明
+
+本仓库不包含真实运行参数。
+
+- 仓库中出现的环境变量名是混淆后的占位名
+- 真实环境变量仅保存在本地私有配置中
+- 真实值仅供作者本人使用，不包含在公开仓库中
+
+## 说明
+
+- 相对日期按 `Asia/Shanghai` 时区解析
+- 运行时需要能够访问目标场馆系统
+- Skill 的意图映射与行为规则见 [SKILL.md](/Users/zhubaoheng/Documents/gym/openclaw-gym-booking-skill/SKILL.md)
