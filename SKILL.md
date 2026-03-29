@@ -124,13 +124,48 @@ python3 ./scripts/gym_booking_tool.py book --venue old-gym --date YYYY-MM-DD --t
 python3 ./scripts/gym_booking_tool.py qr --venue swim
 ```
 
+### Cancel a booking
+
+- `取消订单 81307`
+
+```bash
+python3 ./scripts/gym_booking_tool.py cancel --order-id 81307
+```
+
+### Wait for payment and get HTML (non-VIP venues)
+
+```bash
+python3 ./scripts/gym_booking_tool.py wait-pay --order-id <order_id> --timeout 300
+```
+
 ## Response rules
+
+### Availability
 
 - For availability questions, read `bookable_slots`
 - If `bookable_slots` is empty, say that there are currently no open reservable slots, then summarize the returned dates and time ranges from `all_slots`
 - For `健身房什么时候能预约`, report `健身房` and `鸿雁健身房` separately
-- For booking, read `order_result.status` and `order_result.info`
-- If booking returns `order_page_path`, that file is the generated local预约详情页；优先用它
+
+### Booking — VIP (健身卡) venues
+
+When `book` returns `needs_payment=false`:
+
+- Booking is complete. Report success and send the `order_page_path` HTML file directly.
+
+### Booking — non-VIP (paid) venues like 游泳馆
+
+When `book` returns `needs_payment=true`:
+
+1. Tell the user the booking was placed and give them the `pay_url` to complete payment in WeChat.
+2. Immediately run `wait-pay` in the background to poll for payment:
+   ```bash
+   python3 ./scripts/gym_booking_tool.py wait-pay --order-id <order_id> --timeout 300
+   ```
+3. When `wait-pay` returns `status=paid`, send the `order_page_path` HTML file directly to the user.
+4. If `wait-pay` returns `status=timeout`, tell the user payment was not detected and suggest running the `qr` command after paying.
+
+### Other rules
+
 - For QR requests, run `qr --venue ...` and return `order_page_path`
 - If booking fails, report the exact server reason from `order_result.info`
 - If the tool returns `status=error`, explain that no matching slot was found and include the requested date and time

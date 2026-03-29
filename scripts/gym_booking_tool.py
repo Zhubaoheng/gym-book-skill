@@ -425,6 +425,7 @@ def book_slot(session: GymSession, venue_key: str, target_date: str, period: Opt
         except Exception as exc:
             order_page_error = str(exc)
 
+    needs_payment = bool(pay_url and (not order_details or int((order_details.get("data") or {}).get("audit_status", 0)) == 6))
     return {
         "status": "ok",
         "query_venue": venue_key,
@@ -432,6 +433,9 @@ def book_slot(session: GymSession, venue_key: str, target_date: str, period: Opt
         "captcha": captcha,
         "selected_slot": slot,
         "order_result": result,
+        "order_id": order_id,
+        "pay_url": pay_url,
+        "needs_payment": needs_payment,
         "order_details": order_details,
         "order_page_path": order_page_path,
         "order_page_error": order_page_error,
@@ -528,6 +532,43 @@ def get_qrcode_page(session: GymSession, venue_key: str) -> dict:
     }
 
 
+def wait_pay(session: GymSession, order_id: str, timeout: int = 300, interval: int = 5) -> dict:
+    """
+    轮询订单付款状态，付款完成后生成本地 HTML 并返回路径。
+
+    audit_status=6 → 待支付；audit_status=1 → 已预约（付款成功）。
+    timeout 秒内未付款则返回超时错误。
+    """
+    import time as _time
+    deadline = _time.time() + timeout
+    while _time.time() < deadline:
+        res = session.get_order_details(order_id=order_id)
+        if res.get("status") != 1:
+            return {"status": "error", "message": f"查询订单失败: {res.get('info','')}"}
+        data = res["data"]
+        audit_status = int(data.get("audit_status", 0))
+        if audit_status == 3:
+            return {"status": "error", "message": "订单已取消"}
+        if audit_status != 6:
+            # 付款完成，生成 HTML
+            order_page_path = None
+            try:
+                output_path = ROOT / "generated_orders" / f"order_{order_id}.html"
+                order_page_path = session.render_order_detail_html(res, str(output_path))
+            except Exception as exc:
+                return {"status": "paid", "order_details": res, "order_page_path": None, "error": str(exc)}
+            return {
+                "status": "paid",
+                "order_id": order_id,
+                "stadium_name": data.get("stadium_name", ""),
+                "details": data.get("details", []),
+                "order_details": res,
+                "order_page_path": order_page_path,
+            }
+        _time.sleep(interval)
+    return {"status": "timeout", "message": f"{timeout} 秒内未检测到付款，请稍后再查询二维码"}
+
+
 def cancel_booking(session: GymSession, order_id: str) -> dict:
     """取消指定 order_id 的预约。"""
     # 先获取订单详情确认存在
@@ -566,6 +607,10 @@ def parse_args() -> argparse.Namespace:
     cancel_parser = sub.add_parser("cancel")
     cancel_parser.add_argument("--order-id", required=True, help="订单 ID（数字）")
 
+    wait_pay_parser = sub.add_parser("wait-pay")
+    wait_pay_parser.add_argument("--order-id", required=True, help="订单 ID（数字）")
+    wait_pay_parser.add_argument("--timeout", type=int, default=300, help="最长等待秒数（默认 300）")
+
     return parser.parse_args()
 
 
@@ -592,6 +637,9 @@ def main() -> None:
 
     if args.command == "cancel":
         print(json.dumps(cancel_booking(session, args.order_id), ensure_ascii=False, indent=2))
+
+    if args.command == "wait-pay":
+        print(json.dumps(wait_pay(session, args.order_id, timeout=args.timeout), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
