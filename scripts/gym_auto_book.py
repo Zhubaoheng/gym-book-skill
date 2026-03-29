@@ -735,6 +735,24 @@ class GymSession:
             referer=referer,
         )
 
+    def my_subscribe(self, page: int = 1) -> dict:
+        """获取我的预约列表（mySubscribe）。"""
+        return self.stadium_api_request(
+            "stadium/mySubscribe",
+            {"p": str(page)},
+            referer=f"{BASE_URL}/bdlp_h5_fitness_test/view/stadium/mine.html",
+        )
+
+    def cancel_order(self, order_id: str, order_num: str = "") -> dict:
+        """取消预约。"""
+        params = {
+            "order_id": str(order_id),
+            "school_id": str(self.school_id or ""),
+            "order_num": order_num,
+        }
+        referer = f"{BASE_URL}/bdlp_h5_fitness_test/view/stadium/order.html"
+        return self.stadium_api_request("stadium/cancelOrder", params, referer=referer)
+
     def get_use_records(self, page: int = 1) -> dict:
         """获取使用记录/预约记录列表。"""
         return self.stadium_api_request(

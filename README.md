@@ -9,6 +9,7 @@
 - 查询当前所有在线场馆的可预约时间
 - 一次查询所有场馆的可预约时间和状态
 - 按日期 + 时段或具体时间自动发起预约
+- 取消指定订单的预约
 - 为当前有效订单生成与原始页面完全相同的本地预约详情页和二维码页面
 
 ## 支持的请求示例
@@ -19,6 +20,7 @@
 - `预约今天下午的游泳馆`
 - `预约明天上午10点的老健身房`
 - `给我游泳馆二维码`
+- `取消订单 81307`
 
 ## 支持的场馆
 
@@ -46,6 +48,7 @@ python3 ./scripts/gym_booking_tool.py list --venue '乒乓球场'
 python3 ./scripts/gym_booking_tool.py book --venue swim --date YYYY-MM-DD --period afternoon
 python3 ./scripts/gym_booking_tool.py book --venue old-gym --date YYYY-MM-DD --time 10:00
 python3 ./scripts/gym_booking_tool.py qr --venue swim
+python3 ./scripts/gym_booking_tool.py cancel --order-id 81307
 ```
 
 ## 场馆别名

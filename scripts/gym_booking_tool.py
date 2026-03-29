@@ -528,6 +528,25 @@ def get_qrcode_page(session: GymSession, venue_key: str) -> dict:
     }
 
 
+def cancel_booking(session: GymSession, order_id: str) -> dict:
+    """取消指定 order_id 的预约。"""
+    # 先获取订单详情确认存在
+    details_res = session.get_order_details(order_id=order_id)
+    if details_res.get("status") != 1:
+        return {"status": "error", "message": f"订单不存在或查询失败: {details_res.get('info','')}"}
+    order = details_res["data"]
+    result = session.cancel_order(order_id, order_num=order.get("order_num", ""))
+    if result.get("status") == 1:
+        return {
+            "status": "success",
+            "message": result.get("info", "取消预约成功"),
+            "order_id": order_id,
+            "stadium_name": order.get("stadium_name", ""),
+            "details": order.get("details", []),
+        }
+    return {"status": "error", "message": result.get("info", "取消失败"), "raw": result}
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser()
     sub = parser.add_subparsers(dest="command", required=True)
@@ -543,6 +562,9 @@ def parse_args() -> argparse.Namespace:
 
     qr_parser = sub.add_parser("qr")
     qr_parser.add_argument("--venue", required=True, help="场馆名或别名")
+
+    cancel_parser = sub.add_parser("cancel")
+    cancel_parser.add_argument("--order-id", required=True, help="订单 ID（数字）")
 
     return parser.parse_args()
 
@@ -567,6 +589,9 @@ def main() -> None:
 
     if args.command == "qr":
         print(json.dumps(get_qrcode_page(session, args.venue), ensure_ascii=False, indent=2))
+
+    if args.command == "cancel":
+        print(json.dumps(cancel_booking(session, args.order_id), ensure_ascii=False, indent=2))
 
 
 if __name__ == "__main__":
