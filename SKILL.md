@@ -124,12 +124,28 @@ python3 ./scripts/gym_booking_tool.py book --venue old-gym --date YYYY-MM-DD --t
 python3 ./scripts/gym_booking_tool.py qr --venue swim
 ```
 
-### Cancel a booking
+### List all bookings
 
-- `取消订单 81307`
+- `我有哪些预约` / `查一下我的订单`
 
 ```bash
-python3 ./scripts/gym_booking_tool.py cancel --order-id 81307
+python3 ./scripts/gym_booking_tool.py list-orders
+```
+
+### Cancel a booking
+
+- `取消游泳馆预约` / `取消今天的健身房` / `取消订单 81307`
+
+Step 1 — find the order:
+```bash
+python3 ./scripts/gym_booking_tool.py list-orders
+```
+
+Step 2 — confirm with the user which order to cancel (match by `stadium_name`, `audit_status_text="已预约"`, date in `detail` if available). If only one active order matches, confirm with user before proceeding.
+
+Step 3 — cancel:
+```bash
+python3 ./scripts/gym_booking_tool.py cancel --order-id <order_id>
 ```
 
 ### Wait for payment and get HTML (non-VIP venues)

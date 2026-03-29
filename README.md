@@ -21,7 +21,8 @@
 - `预约今天下午的游泳馆`
 - `预约明天上午10点的老健身房`
 - `给我游泳馆二维码`
-- `取消订单 81307`
+- `我有哪些预约`
+- `取消游泳馆预约`
 - `游泳馆预约后给我付款链接`
 
 ## 支持的场馆
@@ -50,6 +51,7 @@ python3 ./scripts/gym_booking_tool.py list --venue '乒乓球场'
 python3 ./scripts/gym_booking_tool.py book --venue swim --date YYYY-MM-DD --period afternoon
 python3 ./scripts/gym_booking_tool.py book --venue old-gym --date YYYY-MM-DD --time 10:00
 python3 ./scripts/gym_booking_tool.py qr --venue swim
+python3 ./scripts/gym_booking_tool.py list-orders
 python3 ./scripts/gym_booking_tool.py cancel --order-id 81307
 python3 ./scripts/gym_booking_tool.py wait-pay --order-id 69449 --timeout 300
 ```

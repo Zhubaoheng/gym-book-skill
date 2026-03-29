@@ -544,6 +544,28 @@ def get_qrcode_page(session: GymSession, venue_key: str) -> dict:
     }
 
 
+def list_orders(session: GymSession) -> dict:
+    """获取我的预约列表，只保留有效字段，方便 Agent 识别并选择订单。"""
+    res = session.my_subscribe(page=1)
+    if res.get("status") != 1:
+        return {"status": "error", "message": res.get("info", "查询失败")}
+    raw = res.get("data") or []
+    orders = [
+        {
+            "order_id": item.get("order_id"),
+            "order_num": item.get("order_num"),
+            "stadium_name": item.get("stadium_name"),
+            "project_name": item.get("project_name"),
+            "location": item.get("location"),
+            "audit_status": item.get("audit_status"),
+            "audit_status_text": item.get("audit_status_text"),
+            "detail": item.get("detail") or [],
+        }
+        for item in raw
+    ]
+    return {"status": "ok", "orders": orders}
+
+
 def wait_pay(session: GymSession, order_id: str, timeout: int = 300, interval: int = 5) -> dict:
     """
     轮询订单付款状态，付款完成后生成本地 HTML 并返回路径。
@@ -616,6 +638,8 @@ def parse_args() -> argparse.Namespace:
     qr_parser = sub.add_parser("qr")
     qr_parser.add_argument("--venue", required=True, help="场馆名或别名")
 
+    sub.add_parser("list-orders")
+
     cancel_parser = sub.add_parser("cancel")
     cancel_parser.add_argument("--order-id", required=True, help="订单 ID（数字）")
 
@@ -646,6 +670,9 @@ def main() -> None:
 
     if args.command == "qr":
         print(json.dumps(get_qrcode_page(session, args.venue), ensure_ascii=False, indent=2))
+
+    if args.command == "list-orders":
+        print(json.dumps(list_orders(session), ensure_ascii=False, indent=2))
 
     if args.command == "cancel":
         print(json.dumps(cancel_booking(session, args.order_id), ensure_ascii=False, indent=2))
