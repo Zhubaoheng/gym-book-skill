@@ -81,8 +81,25 @@ python3 ./scripts/gym_booking_tool.py qr --venue swim
 - `SESSION_D`：`v3/api.php/*` 请求体所使用的 `AES-128-CBC` 加密 `key`
 - `SESSION_E`：`v3/api.php/*` 请求体所使用的 `AES-128-CBC` 加密 `iv`
 
+## 环境配置
+
+使用 [uv](https://docs.astral.sh/uv/) 管理依赖：
+
+```bash
+uv sync          # 安装所有依赖
+uv run python scripts/gym_booking_tool.py list --venue swim
+```
+
+## 健身卡（VIP）支持
+
+如果你办理了校园健身卡，预约流程会自动检测 VIP 状态：
+
+- 下单前自动调用 `vipInfo` 查询健身卡信息
+- 持卡用户（`vip_status=2`）下单时自动设置 `is_vip=1` 并跳过支付
+- 下单前自动调用 `chooseVerify` 验证所选时段
+
 ## 说明
 
 - 相对日期按 `Asia/Shanghai` 时区解析
 - 运行时需要能够访问目标场馆系统
-- Skill 的意图映射与行为规则见 [SKILL.md](/Users/zhubaoheng/Documents/gym/openclaw-gym-booking-skill/SKILL.md)
+- Skill 的意图映射与行为规则见 [SKILL.md](SKILL.md)

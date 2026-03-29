@@ -4,3 +4,4 @@ README_KEY
 generated_orders/
 scripts/__pycache__/
 *.pyc
+.venv/

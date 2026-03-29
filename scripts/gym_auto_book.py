@@ -608,6 +608,35 @@ class GymSession:
         )
         return self.stadium_api_request("Stadium/getInterval", params, referer=referer)
 
+    def choose_verify(self, stadium_id: str, venue_id: str, selected: list, is_academy: str = "1") -> dict:
+        """
+        提交选择验证（chooseVerify）。
+
+        抓包显示在 addOrder 之前需要先调用此接口验证所选时间段。
+        selected 示例: [{"date":"2026-03-29","week":7,"week_msg":"周日","area_name":"健身房","interval_time":"21:00-22:00","interval_id":4368,"area_id":1}]
+        """
+        params = {
+            "stadium_id": stadium_id,
+            "selected": json.dumps(selected, ensure_ascii=False),
+            "venue_id": venue_id,
+            "is_academy": is_academy,
+        }
+        referer = f"{BASE_URL}/bdlp_h5_fitness_test/view/stadium/choose.html"
+        return self.stadium_api_request("stadium/chooseVerify", params, referer=referer)
+
+    def vip_info(self, venue_id: str, student_num: str = None) -> dict:
+        """
+        查询健身卡（VIP）信息。
+
+        返回 vip_status, vip_list 等，用于判断是否持有健身卡。
+        """
+        params = {
+            "venue_id": venue_id,
+            "student_num": student_num or self.student_num,
+        }
+        referer = f"{BASE_URL}/bdlp_h5_fitness_test/view/stadium/confirm.html"
+        return self.stadium_api_request("Stadium/vipInfo", params, referer=referer)
+
     def get_venue_config(self, venue_id: str, stadium_id: str, category_id: str, *, referer: str = None) -> dict:
         """
         获取确认页场馆配置。
@@ -635,6 +664,7 @@ class GymSession:
         这里请求体按抓包保留纯业务字段，不再混入 uid/token/sign。
         """
         details = order_data.get("details", [])
+        is_vip = str(order_data.get("is_vip", "0"))
         payload = {
             "stadium_id": order_data.get("stadium_id", ""),
             "venue_id": order_data.get("venue_id", ""),
@@ -646,9 +676,11 @@ class GymSession:
             "uids": order_data.get("uids", ""),
             "captcha": order_data.get("captcha", ""),
             "category_id": order_data.get("category_id", ""),
-            "is_vip": order_data.get("is_vip", "0"),
-            "pay_type": order_data.get("pay_type", "1"),
+            "is_vip": is_vip,
         }
+        # 持有健身卡（VIP）时不传 pay_type，否则默认 pay_type=1
+        if is_vip != "1":
+            payload["pay_type"] = order_data.get("pay_type", "1")
 
         for idx, detail in enumerate(details):
             payload[f"details[{idx}][date]"] = detail.get("date", "")

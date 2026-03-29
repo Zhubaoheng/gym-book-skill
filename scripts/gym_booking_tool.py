@@ -227,13 +227,11 @@ def flatten_slots(config: VenueConfig, interval_res: dict) -> List[dict]:
                     "max": item.get("max"),
                     "price": item.get("price"),
                 }
-                # bookable 条件：未过期 + 未满 + 无系统锁定
-                # lock_reason 非空 = 系统锁定（不开放/维护等），不可预约
-                # selected >= max = 已满，不可预约
+                # bookable 条件：未过期 + 已开放 + 未满
+                # is_open=1 即可预约；lock_reason 可能残留旧公告但不影响实际预约
                 slot["bookable"] = bool(
                     not _is_slot_past(slot["date"], slot["interval_time"])
                     and slot["is_open"] == 1
-                    and slot["lock_reason"] == ""
                     and slot["selected"] < slot["max"]
                 )
                 slots.append(slot)
@@ -357,7 +355,31 @@ def book_slot(session: GymSession, venue_key: str, target_date: str, period: Opt
         project_name=slot.get("project_name") or slot["venue_name"],
     )
     booking_session = load_session()
+
+    # chooseVerify: 提交选择验证（抓包显示在下单前必须调用）
+    selected_for_verify = [
+        {
+            "date": slot["date"],
+            "week": slot["week"],
+            "week_msg": slot["week_msg"],
+            "area_name": config.display_name,
+            "interval_time": slot["interval_time"],
+            "interval_id": slot["interval_id"],
+            "area_id": slot["area_id"],
+        }
+    ]
+    booking_session.choose_verify(config.stadium_id, config.venue_id, selected_for_verify)
+
     venue_cfg = booking_session.get_venue_config(config.venue_id, config.stadium_id, config.category_id)
+
+    # vipInfo: 查询是否持有健身卡
+    is_vip = "0"
+    vip_res = booking_session.vip_info(config.venue_id)
+    if vip_res.get("status") == 1:
+        vip_data = vip_res.get("data") or {}
+        if int(vip_data.get("vip_status", 0)) == 2:
+            is_vip = "1"
+
     with contextlib.redirect_stdout(io.StringIO()):
         captcha = booking_session.get_and_recognize_captcha(max_retries=3)
     order_data = {
@@ -367,6 +389,7 @@ def book_slot(session: GymSession, venue_key: str, target_date: str, period: Opt
         "project_name": config.project_name,
         "category_id": config.category_id,
         "captcha": captcha,
+        "is_vip": is_vip,
         "price": str(slot.get("price", "0")).replace(".00", ""),
         "p_count": "0",
         "details": [
