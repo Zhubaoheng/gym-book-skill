@@ -157,12 +157,13 @@ When `book` returns `needs_payment=false`:
 When `book` returns `needs_payment=true`:
 
 1. Tell the user the booking was placed and give them the `pay_url` to complete payment in WeChat.
-2. Immediately run `wait-pay` in the background to poll for payment:
+2. **NEVER declare payment success based on `order_result` fields.** The only source of truth for payment status is `order_details.data.audit_status`: `6` = pending payment, `1` = paid and confirmed.
+3. Immediately run `wait-pay` to poll for payment (this blocks until paid or timeout):
    ```bash
    python3 ./scripts/gym_booking_tool.py wait-pay --order-id <order_id> --timeout 300
    ```
-3. When `wait-pay` returns `status=paid`, send the `order_page_path` HTML file directly to the user.
-4. If `wait-pay` returns `status=timeout`, tell the user payment was not detected and suggest running the `qr` command after paying.
+4. When `wait-pay` returns `status=paid`, send the `order_page_path` HTML file directly to the user.
+5. If `wait-pay` returns `status=timeout`, tell the user payment was not detected and suggest running the `qr` command after paying.
 
 ### Other rules
 

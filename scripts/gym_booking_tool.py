@@ -425,14 +425,26 @@ def book_slot(session: GymSession, venue_key: str, target_date: str, period: Opt
         except Exception as exc:
             order_page_error = str(exc)
 
-    needs_payment = bool(pay_url and (not order_details or int((order_details.get("data") or {}).get("audit_status", 0)) == 6))
+    audit_status = int((order_details.get("data") or {}).get("audit_status", 0)) if order_details else 0
+    needs_payment = bool(pay_url and audit_status == 6)
+
+    # 从 order_result 中移除微信支付模板字段（err_code / err_code_des），
+    # 这两个字段与实际付款状态无关，容易误导判断。
+    # 付款状态的唯一依据是 order_details.data.audit_status：
+    #   6 = 待支付，1 = 已预约（付款成功）
+    sanitized_result = {k: v for k, v in result.items() if k != "data"}
+    sanitized_result["data"] = {
+        k: v for k, v in result_data.items()
+        if k not in ("err_code", "err_code_des")
+    }
+
     return {
         "status": "ok",
         "query_venue": venue_key,
         "venue_config": venue_cfg,
         "captcha": captcha,
         "selected_slot": slot,
-        "order_result": result,
+        "order_result": sanitized_result,
         "order_id": order_id,
         "pay_url": pay_url,
         "needs_payment": needs_payment,
